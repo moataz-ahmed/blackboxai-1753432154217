@@ -1,0 +1,15 @@
+This is a placeholder file for Cairo-Bold.ttf
+
+To get the actual font file:
+1. Visit: https://fonts.google.com/specimen/Cairo
+2. Click "Download family" button
+3. Extract the ZIP file
+4. Copy "Cairo-Bold.ttf" to this fonts/ directory
+5. Delete this placeholder file
+
+Alternative method:
+1. Visit: https://gwfh.mranftl.com/fonts/cairo?subsets=latin
+2. Download the TTF format files
+3. Rename and place in this directory
+
+The font is licensed under SIL Open Font License, Version 1.1
