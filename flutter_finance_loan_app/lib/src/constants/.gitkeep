@@ -1,0 +1,12 @@
+# Constants Directory
+
+This directory contains application constants, configuration values, and static data.
+
+## Suggested Structure
+
+- `app_constants.dart` - General app constants
+- `api_constants.dart` - API endpoints and configuration
+- `color_constants.dart` - App color scheme
+- `text_constants.dart` - Text styles and typography
+- `route_constants.dart` - Navigation route names
+- `storage_constants.dart` - SharedPreferences keys
