@@ -1,0 +1,11 @@
+# Services Directory
+
+This directory contains service classes for API communication, data management, and business logic.
+
+## Suggested Structure
+
+- `api_service.dart` - HTTP client and API endpoints
+- `auth_service.dart` - Authentication service
+- `loan_service.dart` - Loan-related API calls
+- `storage_service.dart` - Local storage management
+- `notification_service.dart` - Push notifications
