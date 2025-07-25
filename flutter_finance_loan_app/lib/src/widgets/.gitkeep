@@ -1,0 +1,13 @@
+# Widgets Directory
+
+This directory contains reusable UI components and custom widgets.
+
+## Suggested Structure
+
+- `custom_button.dart` - Reusable button components
+- `custom_text_field.dart` - Styled input fields
+- `loading_widget.dart` - Loading indicators
+- `error_widget.dart` - Error display components
+- `loan_card.dart` - Loan information cards
+- `transaction_tile.dart` - Transaction list items
+- `language_selector.dart` - Language switching widget
