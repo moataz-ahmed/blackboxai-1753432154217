@@ -1,0 +1,297 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Loan Management - Finance Loan Admin{% endblock %}
+
+{% block page_title %}Loan Management{% endblock %}
+{% block page_description %}Manage and review all loan applications{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Filter and Search Bar -->
+    <div class="search-bar">
+        <div class="flex-1">
+            <input 
+                type="text" 
+                class="search-input" 
+                placeholder="Search loans by ID, user email, or amount..."
+                id="loan-search"
+            >
+        </div>
+        
+        <div class="flex items-center space-x-4">
+            <select class="filter-select" onchange="filterLoans(this.value)">
+                <option value="">All Status</option>
+                <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                <option value="approved" {% if status_filter == 'approved' %}selected{% endif %}>Approved</option>
+                <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>Rejected</option>
+            </select>
+            
+            <button class="btn btn-primary" onclick="refreshLoans()">
+                <i class="fas fa-sync-alt mr-2"></i>
+                Refresh
+            </button>
+        </div>
+    </div>
+
+    <!-- Loans Table -->
+    <div class="bg-white rounded-xl shadow-sm border border-border overflow-hidden">
+        <div class="px-6 py-4 border-b border-border">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-text-primary">
+                    Loan Applications
+                    {% if loans %}
+                        <span class="text-sm font-normal text-text-secondary ml-2">({{ loans|length }} total)</span>
+                    {% endif %}
+                </h3>
+                
+                <div class="flex items-center space-x-2">
+                    <button class="btn btn-secondary btn-sm" onclick="exportLoans()">
+                        <i class="fas fa-download mr-1"></i>
+                        Export
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        {% if loans %}
+        <div class="overflow-x-auto">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th data-sort="id">
+                            <input type="checkbox" id="select-all" class="rounded">
+                        </th>
+                        <th data-sort="id">Loan ID</th>
+                        <th data-sort="user">Customer</th>
+                        <th data-sort="amount">Amount</th>
+                        <th data-sort="bank">Bank</th>
+                        <th data-sort="company">Company</th>
+                        <th data-sort="status">Status</th>
+                        <th data-sort="created_at">Date Applied</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for loan in loans %}
+                    <tr>
+                        <td>
+                            <input type="checkbox" class="row-checkbox rounded" value="{{ loan.id }}">
+                        </td>
+                        <td>
+                            <div class="font-mono text-sm">
+                                #{{ loan.id[:8] }}...
+                            </div>
+                        </td>
+                        <td>
+                            <div class="flex items-center space-x-3">
+                                <div class="w-8 h-8 bg-gradient-to-r from-primary to-secondary rounded-full flex items-center justify-center">
+                                    <i class="fas fa-user text-white text-xs"></i>
+                                </div>
+                                <div>
+                                    <div class="font-medium text-text-primary">{{ loan.user.full_name if loan.user else 'N/A' }}</div>
+                                    <div class="text-sm text-text-secondary">{{ loan.user.email if loan.user else 'N/A' }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="font-semibold text-text-primary">
+                                ${{ "%.2f"|format(loan.amount) }}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="flex items-center space-x-2">
+                                {% if loan.bank and loan.bank.logo %}
+                                <img src="{{ loan.bank.logo }}" alt="{{ loan.bank.name }}" class="w-6 h-6 rounded">
+                                {% endif %}
+                                <span class="text-sm">{{ loan.bank.name if loan.bank else 'N/A' }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="flex items-center space-x-2">
+                                {% if loan.company and loan.company.logo %}
+                                <img src="{{ loan.company.logo }}" alt="{{ loan.company.name }}" class="w-6 h-6 rounded">
+                                {% endif %}
+                                <span class="text-sm">{{ loan.company.name if loan.company else 'N/A' }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="status-badge status-{{ loan.status }}">
+                                {{ loan.status.title() }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="text-sm text-text-secondary">
+                                {{ loan.created_at.strftime('%m/%d/%Y %H:%M') if loan.created_at else 'N/A' }}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="flex items-center space-x-2">
+                                <!-- Status Update Form -->
+                                <form method="post" action="/admin/loans/{{ loan.id }}/update" class="inline-flex items-center space-x-2">
+                                    <select name="status" class="text-xs border border-border rounded px-2 py-1" onchange="this.form.submit()">
+                                        <option value="pending" {% if loan.status == 'pending' %}selected{% endif %}>Pending</option>
+                                        <option value="approved" {% if loan.status == 'approved' %}selected{% endif %}>Approved</option>
+                                        <option value="rejected" {% if loan.status == 'rejected' %}selected{% endif %}>Rejected</option>
+                                    </select>
+                                </form>
+                                
+                                <!-- View Details Button -->
+                                <button 
+                                    class="btn btn-secondary btn-sm" 
+                                    onclick="viewLoanDetails('{{ loan.id }}')"
+                                    title="View Details"
+                                >
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Bulk Actions -->
+        <div id="bulk-actions" class="hidden px-6 py-4 bg-blue-50 border-t border-border">
+            <div class="flex items-center justify-between">
+                <span class="text-sm text-text-secondary">
+                    <span class="selected-count">0</span> loans selected
+                </span>
+                <div class="flex items-center space-x-2">
+                    <button class="btn btn-success btn-sm" onclick="bulkUpdateStatus('approved')">
+                        <i class="fas fa-check mr-1"></i>
+                        Approve Selected
+                    </button>
+                    <button class="btn btn-danger btn-sm" onclick="bulkUpdateStatus('rejected')">
+                        <i class="fas fa-times mr-1"></i>
+                        Reject Selected
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <!-- Empty State -->
+        <div class="empty-state py-16">
+            <div class="empty-state-icon">
+                <i class="fas fa-file-invoice-dollar"></i>
+            </div>
+            <h4 class="empty-state-title">No Loan Applications</h4>
+            <p class="empty-state-description">
+                {% if status_filter %}
+                    No {{ status_filter }} loan applications found.
+                {% else %}
+                    No loan applications have been submitted yet.
+                {% endif %}
+            </p>
+            {% if status_filter %}
+            <div class="mt-4">
+                <a href="/admin/loans" class="btn btn-primary">
+                    <i class="fas fa-list mr-2"></i>
+                    View All Loans
+                </a>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Loan Details Modal -->
+<div id="loan-details-modal" class="modal-overlay hidden">
+    <div class="modal-content max-w-2xl">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-xl font-semibold text-text-primary">Loan Details</h3>
+            <button class="text-text-secondary hover:text-text-primary" onclick="closeLoanModal()">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        <div id="loan-details-content">
+            <!-- Content will be loaded dynamically -->
+        </div>
+        
+        <div class="flex justify-end space-x-3 mt-6">
+            <button class="btn btn-secondary" onclick="closeLoanModal()">Close</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function filterLoans(status) {
+    const url = new URL(window.location);
+    if (status) {
+        url.searchParams.set('status_filter', status);
+    } else {
+        url.searchParams.delete('status_filter');
+    }
+    window.location.href = url.toString();
+}
+
+function refreshLoans() {
+    window.location.reload();
+}
+
+function exportLoans() {
+    // In a real application, this would trigger a CSV/Excel export
+    window.adminJS.showNotification('Export functionality would be implemented here', 'info');
+}
+
+function viewLoanDetails(loanId) {
+    // In a real application, this would fetch loan details via AJAX
+    const modal = document.getElementById('loan-details-modal');
+    const content = document.getElementById('loan-details-content');
+    
+    content.innerHTML = `
+        <div class="space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="text-sm font-medium text-text-secondary">Loan ID</label>
+                    <p class="font-mono">${loanId}</p>
+                </div>
+                <div>
+                    <label class="text-sm font-medium text-text-secondary">Status</label>
+                    <p><span class="status-badge status-pending">Pending</span></p>
+                </div>
+            </div>
+            <div class="text-center py-8 text-text-secondary">
+                <i class="fas fa-info-circle text-2xl mb-2"></i>
+                <p>Detailed loan information would be displayed here</p>
+            </div>
+        </div>
+    `;
+    
+    modal.classList.remove('hidden');
+}
+
+function closeLoanModal() {
+    document.getElementById('loan-details-modal').classList.add('hidden');
+}
+
+function bulkUpdateStatus(status) {
+    const selectedLoans = document.querySelectorAll('.row-checkbox:checked');
+    if (selectedLoans.length === 0) {
+        window.adminJS.showNotification('Please select loans to update', 'warning');
+        return;
+    }
+    
+    const loanIds = Array.from(selectedLoans).map(cb => cb.value);
+    const message = `Are you sure you want to ${status} ${loanIds.length} loan(s)?`;
+    
+    if (confirm(message)) {
+        // In a real application, this would make an AJAX request to bulk update
+        window.adminJS.showNotification(`Bulk ${status} functionality would be implemented here`, 'info');
+    }
+}
+
+// Initialize search functionality
+document.getElementById('loan-search').addEventListener('input', function(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    const rows = document.querySelectorAll('tbody tr');
+    
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(searchTerm) ? '' : 'none';
+    });
+});
+</script>
+{% endblock %}
