@@ -1,0 +1,340 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{{ action }} Credit Limit - Finance Loan Admin{% endblock %}
+
+{% block page_title %}{{ action }} Credit Limit{% endblock %}
+{% block page_description %}{% if credit_limit %}Edit credit limit information{% else %}Set up a new credit limit for a customer{% endif %}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <!-- Back Button -->
+    <div class="mb-6">
+        <a href="/admin/credit-limits" class="inline-flex items-center text-text-secondary hover:text-primary">
+            <i class="fas fa-arrow-left mr-2"></i>
+            Back to Credit Limits
+        </a>
+    </div>
+
+    <!-- Form Card -->
+    <div class="bg-white rounded-xl shadow-sm border border-border p-8">
+        <div class="mb-8">
+            <div class="flex items-center space-x-3 mb-4">
+                <div class="w-12 h-12 bg-gradient-to-r from-primary to-secondary rounded-lg flex items-center justify-center">
+                    <i class="fas fa-credit-card text-white text-xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold text-text-primary">{{ action }} Credit Limit</h2>
+                    <p class="text-text-secondary">
+                        {% if credit_limit %}
+                            Update credit limit information and settings
+                        {% else %}
+                            Set up a new credit limit for a customer
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        {% if error %}
+        <div class="mb-6 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg flex items-center">
+            <i class="fas fa-exclamation-circle mr-2"></i>
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <form method="post" class="space-y-6">
+            <!-- Credit Limit Information Section -->
+            <div class="space-y-6">
+                <div class="border-b border-border pb-4">
+                    <h3 class="text-lg font-semibold text-text-primary mb-2">Credit Limit Details</h3>
+                    <p class="text-sm text-text-secondary">Configure the credit limit for a specific customer, bank, and company combination</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="form-group">
+                        <label for="user_id" class="form-label">
+                            <i class="fas fa-user mr-2 text-text-secondary"></i>
+                            Customer *
+                        </label>
+                        <select 
+                            id="user_id" 
+                            name="user_id" 
+                            class="form-select" 
+                            required
+                            {% if credit_limit %}disabled{% endif %}
+                        >
+                            <option value="">Select a customer</option>
+                            {% for user in users %}
+                            <option value="{{ user.id }}" {% if credit_limit and credit_limit.user_id == user.id %}selected{% endif %}>
+                                {{ user.full_name }} ({{ user.email }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                        {% if credit_limit %}
+                        <input type="hidden" name="user_id" value="{{ credit_limit.user_id }}">
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="bank_id" class="form-label">
+                            <i class="fas fa-university mr-2 text-text-secondary"></i>
+                            Bank *
+                        </label>
+                        <select 
+                            id="bank_id" 
+                            name="bank_id" 
+                            class="form-select" 
+                            required
+                            {% if credit_limit %}disabled{% endif %}
+                        >
+                            <option value="">Select a bank</option>
+                            {% for bank in banks %}
+                            <option value="{{ bank.id }}" {% if credit_limit and credit_limit.bank_id == bank.id %}selected{% endif %}>
+                                {{ bank.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        {% if credit_limit %}
+                        <input type="hidden" name="bank_id" value="{{ credit_limit.bank_id }}">
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="form-group">
+                        <label for="company_id" class="form-label">
+                            <i class="fas fa-building mr-2 text-text-secondary"></i>
+                            Company *
+                        </label>
+                        <select 
+                            id="company_id" 
+                            name="company_id" 
+                            class="form-select" 
+                            required
+                            {% if credit_limit %}disabled{% endif %}
+                        >
+                            <option value="">Select a company</option>
+                            {% for company in companies %}
+                            <option value="{{ company.id }}" {% if credit_limit and credit_limit.company_id == company.id %}selected{% endif %}>
+                                {{ company.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        {% if credit_limit %}
+                        <input type="hidden" name="company_id" value="{{ credit_limit.company_id }}">
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="total_limit" class="form-label">
+                            <i class="fas fa-dollar-sign mr-2 text-text-secondary"></i>
+                            Total Credit Limit *
+                        </label>
+                        <input 
+                            type="number" 
+                            id="total_limit" 
+                            name="total_limit" 
+                            class="form-input" 
+                            placeholder="Enter total credit limit"
+                            value="{{ credit_limit.total_limit if credit_limit else '' }}"
+                            min="0"
+                            step="0.01"
+                            required
+                        >
+                        <p class="text-xs text-text-secondary mt-1">Maximum amount the customer can borrow</p>
+                    </div>
+                </div>
+
+                {% if credit_limit %}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-chart-line mr-2 text-text-secondary"></i>
+                            Used Amount
+                        </label>
+                        <div class="form-input bg-gray-50 text-gray-600">
+                            ${{ "%.2f"|format(credit_limit.used_limit) }}
+                        </div>
+                        <p class="text-xs text-text-secondary mt-1">Amount currently used (read-only)</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-wallet mr-2 text-text-secondary"></i>
+                            Available Amount
+                        </label>
+                        <div class="form-input bg-gray-50 text-gray-600">
+                            ${{ "%.2f"|format(credit_limit.available_limit) }}
+                        </div>
+                        <p class="text-xs text-text-secondary mt-1">Amount available for borrowing (read-only)</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if credit_limit %}
+            <div class="space-y-4">
+                <div class="border-b border-border pb-4">
+                    <h3 class="text-lg font-semibold text-text-primary mb-2">Credit Utilization</h3>
+                    <p class="text-sm text-text-secondary">Visual representation of credit limit usage</p>
+                </div>
+
+                <div class="bg-background rounded-lg p-6">
+                    {% set utilization = (credit_limit.used_limit / credit_limit.total_limit * 100) if credit_limit.total_limit > 0 else 0 %}
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-sm font-medium text-text-secondary">Utilization: {{ utilization|round }}%</span>
+                        <span class="text-sm text-text-secondary">
+                            ${{ "%.2f"|format(credit_limit.used_limit) }} / ${{ "%.2f"|format(credit_limit.total_limit) }}
+                        </span>
+                    </div>
+                    
+                    <div class="w-full bg-gray-200 rounded-full h-4">
+                        <div class="h-4 rounded-full {% if utilization > 80 %}bg-red-500{% elif utilization > 60 %}bg-yellow-500{% else %}bg-green-500{% endif %}" style="width: {{ utilization|round|int }}%"></div>
+                    </div>
+                    
+                    <div class="flex justify-between text-xs text-text-secondary mt-2">
+                        <span>0%</span>
+                        <span>50%</span>
+                        <span>100%</span>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Form Actions -->
+            <div class="flex items-center justify-between pt-6 border-t border-border">
+                <a href="/admin/credit-limits" class="btn btn-secondary">
+                    <i class="fas fa-times mr-2"></i>
+                    Cancel
+                </a>
+                
+                <div class="flex items-center space-x-3">
+                    {% if credit_limit %}
+                    <button type="button" class="btn btn-warning" onclick="resetForm()">
+                        <i class="fas fa-undo mr-2"></i>
+                        Reset
+                    </button>
+                    {% endif %}
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save mr-2"></i>
+                        {% if credit_limit %}Update Credit Limit{% else %}Create Credit Limit{% endif %}
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    {% if not credit_limit %}
+    <!-- Tips for New Credit Limit -->
+    <div class="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-6">
+        <div class="flex items-start space-x-3">
+            <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                <i class="fas fa-lightbulb text-blue-600"></i>
+            </div>
+            <div>
+                <h4 class="font-semibold text-blue-800 mb-2">Tips for Setting Credit Limits</h4>
+                <ul class="text-sm text-blue-700 space-y-1">
+                    <li>• Each customer can have multiple credit limits with different banks and companies</li>
+                    <li>• Credit limits should be based on customer's financial capacity</li>
+                    <li>• Consider the company's relationship with the bank when setting limits</li>
+                    <li>• Monitor utilization regularly to prevent over-borrowing</li>
+                    <li>• Used amount will be automatically updated when loans are approved</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function resetForm() {
+    if (confirm('Are you sure you want to reset all changes? This will restore the original values.')) {
+        document.querySelector('form').reset();
+    }
+}
+
+// Form validation
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const inputs = form.querySelectorAll('input[required], select[required]');
+    
+    inputs.forEach(input => {
+        input.addEventListener('blur', function() {
+            validateField(this);
+        });
+        
+        input.addEventListener('change', function() {
+            this.classList.remove('border-red-500');
+            const errorMsg = this.parentNode.querySelector('.error-message');
+            if (errorMsg) {
+                errorMsg.remove();
+            }
+        });
+    });
+    
+    form.addEventListener('submit', function(e) {
+        let isValid = true;
+        
+        inputs.forEach(input => {
+            if (!validateField(input)) {
+                isValid = false;
+            }
+        });
+        
+        if (!isValid) {
+            e.preventDefault();
+            window.adminJS.showNotification('Please fix the errors before submitting', 'error');
+        }
+    });
+});
+
+function validateField(field) {
+    const value = field.value.trim();
+    let isValid = true;
+    let errorMessage = '';
+    
+    // Remove existing error
+    field.classList.remove('border-red-500');
+    const existingError = field.parentNode.querySelector('.error-message');
+    if (existingError) {
+        existingError.remove();
+    }
+    
+    // Required field validation
+    if (field.hasAttribute('required') && !value) {
+        isValid = false;
+        errorMessage = 'This field is required';
+    }
+    
+    // Number validation for credit limit
+    if (field.type === 'number' && value) {
+        const numValue = parseFloat(value);
+        if (isNaN(numValue) || numValue < 0) {
+            isValid = false;
+            errorMessage = 'Please enter a valid positive number';
+        }
+    }
+    
+    // Show error if validation failed
+    if (!isValid) {
+        field.classList.add('border-red-500');
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error-message text-red-500 text-sm mt-1';
+        errorDiv.textContent = errorMessage;
+        field.parentNode.appendChild(errorDiv);
+    }
+    
+    return isValid;
+}
+
+// Update available amount calculation in real-time for new credit limits
+const totalLimitInput = document.getElementById('total_limit');
+if (totalLimitInput && !document.querySelector('input[name="used_limit"]')) {
+    totalLimitInput.addEventListener('input', function() {
+        // For new credit limits, available = total (since used = 0)
+        // This is just for visual feedback during form filling
+    });
+}
+</script>
+{% endblock %}
