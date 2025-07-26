@@ -1,0 +1,386 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{{ action }} Customer - Finance Loan Admin{% endblock %}
+
+{% block page_title %}{{ action }} Customer{% endblock %}
+{% block page_description %}{% if customer %}Edit customer information{% else %}Add a new customer to the system{% endif %}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <!-- Back Button -->
+    <div class="mb-6">
+        <a href="/admin/customers" class="inline-flex items-center text-text-secondary hover:text-primary">
+            <i class="fas fa-arrow-left mr-2"></i>
+            Back to Customers
+        </a>
+    </div>
+
+    <!-- Form Card -->
+    <div class="bg-white rounded-xl shadow-sm border border-border p-8">
+        <div class="mb-8">
+            <div class="flex items-center space-x-3 mb-4">
+                <div class="w-12 h-12 bg-gradient-to-r from-primary to-secondary rounded-lg flex items-center justify-center">
+                    <i class="fas fa-user text-white text-xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold text-text-primary">{{ action }} Customer</h2>
+                    <p class="text-text-secondary">
+                        {% if customer %}
+                            Update customer information and settings
+                        {% else %}
+                            Fill in the details to create a new customer account
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        {% if error %}
+        <div class="mb-6 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg flex items-center">
+            <i class="fas fa-exclamation-circle mr-2"></i>
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <form method="post" class="space-y-6">
+            <!-- Personal Information Section -->
+            <div class="space-y-6">
+                <div class="border-b border-border pb-4">
+                    <h3 class="text-lg font-semibold text-text-primary mb-2">Personal Information</h3>
+                    <p class="text-sm text-text-secondary">Basic customer details and contact information</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="form-group">
+                        <label for="full_name" class="form-label">
+                            <i class="fas fa-user mr-2 text-text-secondary"></i>
+                            Full Name *
+                        </label>
+                        <input 
+                            type="text" 
+                            id="full_name" 
+                            name="full_name" 
+                            class="form-input" 
+                            placeholder="Enter full name"
+                            value="{{ customer.full_name if customer else '' }}"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email" class="form-label">
+                            <i class="fas fa-envelope mr-2 text-text-secondary"></i>
+                            Email Address *
+                        </label>
+                        <input 
+                            type="email" 
+                            id="email" 
+                            name="email" 
+                            class="form-input" 
+                            placeholder="Enter email address"
+                            value="{{ customer.email if customer else '' }}"
+                            required
+                        >
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="form-group">
+                        <label for="phone_number" class="form-label">
+                            <i class="fas fa-phone mr-2 text-text-secondary"></i>
+                            Phone Number *
+                        </label>
+                        <input 
+                            type="tel" 
+                            id="phone_number" 
+                            name="phone_number" 
+                            class="form-input" 
+                            placeholder="Enter phone number"
+                            value="{{ customer.phone_number if customer else '' }}"
+                            required
+                        >
+                    </div>
+
+                    {% if not customer %}
+                    <div class="form-group">
+                        <label for="password" class="form-label">
+                            <i class="fas fa-lock mr-2 text-text-secondary"></i>
+                            Password *
+                        </label>
+                        <div class="relative">
+                            <input 
+                                type="password" 
+                                id="password" 
+                                name="password" 
+                                class="form-input pr-12" 
+                                placeholder="Enter password"
+                                required
+                                minlength="6"
+                            >
+                            <button 
+                                type="button" 
+                                class="absolute right-3 top-1/2 transform -translate-y-1/2 text-text-secondary hover:text-text-primary"
+                                onclick="togglePasswordVisibility('password')"
+                            >
+                                <i class="fas fa-eye" id="password-toggle"></i>
+                            </button>
+                        </div>
+                        <p class="text-xs text-text-secondary mt-1">Minimum 6 characters required</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if customer %}
+            <!-- Account Settings Section -->
+            <div class="space-y-6">
+                <div class="border-b border-border pb-4">
+                    <h3 class="text-lg font-semibold text-text-primary mb-2">Account Settings</h3>
+                    <p class="text-sm text-text-secondary">Manage customer account status and permissions</p>
+                </div>
+
+                <div class="form-group">
+                    <div class="flex items-center space-x-3">
+                        <input 
+                            type="checkbox" 
+                            id="is_active" 
+                            name="is_active" 
+                            class="w-4 h-4 text-primary border-border rounded focus:ring-primary"
+                            {% if customer.is_active %}checked{% endif %}
+                        >
+                        <label for="is_active" class="text-sm font-medium text-text-primary">
+                            Active Account
+                        </label>
+                    </div>
+                    <p class="text-xs text-text-secondary mt-1 ml-7">
+                        Inactive accounts cannot access the system or apply for loans
+                    </p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Form Actions -->
+            <div class="flex items-center justify-between pt-6 border-t border-border">
+                <a href="/admin/customers" class="btn btn-secondary">
+                    <i class="fas fa-times mr-2"></i>
+                    Cancel
+                </a>
+                
+                <div class="flex items-center space-x-3">
+                    {% if customer %}
+                    <button type="button" class="btn btn-warning" onclick="resetForm()">
+                        <i class="fas fa-undo mr-2"></i>
+                        Reset
+                    </button>
+                    {% endif %}
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save mr-2"></i>
+                        {% if customer %}Update Customer{% else %}Create Customer{% endif %}
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        {% if customer %}
+        <!-- Additional Information -->
+        <div class="mt-8 pt-8 border-t border-border">
+            <h3 class="text-lg font-semibold text-text-primary mb-4">Additional Information</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-background rounded-lg p-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-calendar text-blue-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-text-secondary">Joined Date</p>
+                            <p class="font-medium text-text-primary">
+                                {{ customer.created_at.strftime('%B %d, %Y') if customer.created_at else 'N/A' }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-background rounded-lg p-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-file-invoice-dollar text-green-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-text-secondary">Total Loans</p>
+                            <p class="font-medium text-text-primary">
+                                {{ customer.loans|length if customer.loans else 0 }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-background rounded-lg p-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-credit-card text-purple-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-text-secondary">Credit Limits</p>
+                            <p class="font-medium text-text-primary">
+                                {{ customer.credit_limits|length if customer.credit_limits else 0 }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if not customer %}
+    <!-- Tips for New Customer -->
+    <div class="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-6">
+        <div class="flex items-start space-x-3">
+            <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                <i class="fas fa-lightbulb text-blue-600"></i>
+            </div>
+            <div>
+                <h4 class="font-semibold text-blue-800 mb-2">Tips for Adding New Customers</h4>
+                <ul class="text-sm text-blue-700 space-y-1">
+                    <li>• Ensure the email address is unique and valid</li>
+                    <li>• Phone numbers should include country code if international</li>
+                    <li>• Use a strong password with at least 6 characters</li>
+                    <li>• New customers will be active by default</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function togglePasswordVisibility(inputId) {
+    const input = document.getElementById(inputId);
+    const toggle = document.getElementById(inputId + '-toggle');
+    
+    if (input.type === 'password') {
+        input.type = 'text';
+        toggle.classList.remove('fa-eye');
+        toggle.classList.add('fa-eye-slash');
+    } else {
+        input.type = 'password';
+        toggle.classList.remove('fa-eye-slash');
+        toggle.classList.add('fa-eye');
+    }
+}
+
+function resetForm() {
+    if (confirm('Are you sure you want to reset all changes? This will restore the original values.')) {
+        document.querySelector('form').reset();
+        // For edit forms, restore original values
+        const form = document.querySelector('form');
+        const inputs = form.querySelectorAll('input');
+        inputs.forEach(input => {
+            if (input.hasAttribute('data-original-value')) {
+                if (input.type === 'checkbox') {
+                    input.checked = input.getAttribute('data-original-value') === 'true';
+                } else {
+                    input.value = input.getAttribute('data-original-value');
+                }
+            }
+        });
+    }
+}
+
+// Form validation
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const inputs = form.querySelectorAll('input[required]');
+    
+    // Real-time validation
+    inputs.forEach(input => {
+        input.addEventListener('blur', function() {
+            validateField(this);
+        });
+        
+        input.addEventListener('input', function() {
+            // Remove error styling on input
+            this.classList.remove('border-red-500');
+            const errorMsg = this.parentNode.querySelector('.error-message');
+            if (errorMsg) {
+                errorMsg.remove();
+            }
+        });
+    });
+    
+    // Form submission validation
+    form.addEventListener('submit', function(e) {
+        let isValid = true;
+        
+        inputs.forEach(input => {
+            if (!validateField(input)) {
+                isValid = false;
+            }
+        });
+        
+        if (!isValid) {
+            e.preventDefault();
+            window.adminJS.showNotification('Please fix the errors before submitting', 'error');
+        }
+    });
+});
+
+function validateField(field) {
+    const value = field.value.trim();
+    let isValid = true;
+    let errorMessage = '';
+    
+    // Remove existing error
+    field.classList.remove('border-red-500');
+    const existingError = field.parentNode.querySelector('.error-message');
+    if (existingError) {
+        existingError.remove();
+    }
+    
+    // Required field validation
+    if (field.hasAttribute('required') && !value) {
+        isValid = false;
+        errorMessage = 'This field is required';
+    }
+    
+    // Email validation
+    if (field.type === 'email' && value) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(value)) {
+            isValid = false;
+            errorMessage = 'Please enter a valid email address';
+        }
+    }
+    
+    // Password validation
+    if (field.type === 'password' && value) {
+        if (value.length < 6) {
+            isValid = false;
+            errorMessage = 'Password must be at least 6 characters long';
+        }
+    }
+    
+    // Phone validation
+    if (field.type === 'tel' && value) {
+        const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+        if (!phoneRegex.test(value.replace(/[\s\-\(\)]/g, ''))) {
+            isValid = false;
+            errorMessage = 'Please enter a valid phone number';
+        }
+    }
+    
+    // Show error if validation failed
+    if (!isValid) {
+        field.classList.add('border-red-500');
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error-message text-red-500 text-sm mt-1';
+        errorDiv.textContent = errorMessage;
+        field.parentNode.appendChild(errorDiv);
+    }
+    
+    return isValid;
+}
+</script>
+{% endblock %}
