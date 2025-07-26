@@ -1,0 +1,355 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{{ action }} Company - Finance Loan Admin{% endblock %}
+
+{% block page_title %}{{ action }} Company{% endblock %}
+{% block page_description %}{% if company %}Edit company information{% else %}Add a new company to the system{% endif %}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <!-- Back Button -->
+    <div class="mb-6">
+        <a href="/admin/companies" class="inline-flex items-center text-text-secondary hover:text-primary">
+            <i class="fas fa-arrow-left mr-2"></i>
+            Back to Companies
+        </a>
+    </div>
+
+    <!-- Form Card -->
+    <div class="bg-white rounded-xl shadow-sm border border-border p-8">
+        <div class="mb-8">
+            <div class="flex items-center space-x-3 mb-4">
+                <div class="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-building text-white text-xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold text-text-primary">{{ action }} Company</h2>
+                    <p class="text-text-secondary">
+                        {% if company %}
+                            Update company information and settings
+                        {% else %}
+                            Fill in the details to add a new company
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        {% if error %}
+        <div class="mb-6 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg flex items-center">
+            <i class="fas fa-exclamation-circle mr-2"></i>
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <form method="post" class="space-y-6">
+            <!-- Company Information Section -->
+            <div class="space-y-6">
+                <div class="border-b border-border pb-4">
+                    <h3 class="text-lg font-semibold text-text-primary mb-2">Company Information</h3>
+                    <p class="text-sm text-text-secondary">Basic company details and branding information</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="name" class="form-label">
+                        <i class="fas fa-building mr-2 text-text-secondary"></i>
+                        Company Name *
+                    </label>
+                    <input 
+                        type="text" 
+                        id="name" 
+                        name="name" 
+                        class="form-input" 
+                        placeholder="Enter company name"
+                        value="{{ company.name if company else '' }}"
+                        required
+                    >
+                    <p class="text-xs text-text-secondary mt-1">The official name of the company</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="logo" class="form-label">
+                        <i class="fas fa-image mr-2 text-text-secondary"></i>
+                        Logo URL *
+                    </label>
+                    <input 
+                        type="url" 
+                        id="logo" 
+                        name="logo" 
+                        class="form-input" 
+                        placeholder="https://example.com/company-logo.png"
+                        value="{{ company.logo if company else '' }}"
+                        required
+                    >
+                    <p class="text-xs text-text-secondary mt-1">Direct URL to the company's logo image</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="description" class="form-label">
+                        <i class="fas fa-align-left mr-2 text-text-secondary"></i>
+                        Description
+                    </label>
+                    <textarea 
+                        id="description" 
+                        name="description" 
+                        class="form-textarea" 
+                        rows="4"
+                        placeholder="Enter company description (optional)"
+                    >{{ company.description if company else '' }}</textarea>
+                    <p class="text-xs text-text-secondary mt-1">Brief description about the company and its business</p>
+                </div>
+            </div>
+
+            <!-- Logo Preview -->
+            <div class="space-y-4">
+                <div class="border-b border-border pb-4">
+                    <h3 class="text-lg font-semibold text-text-primary mb-2">Logo Preview</h3>
+                    <p class="text-sm text-text-secondary">Preview how the logo will appear in the system</p>
+                </div>
+
+                <div class="bg-background rounded-lg p-6">
+                    <div class="flex items-center justify-center">
+                        <div id="logo-preview" class="w-32 h-20 border-2 border-dashed border-border rounded-lg flex items-center justify-center bg-white">
+                            {% if company and company.logo %}
+                            <img src="{{ company.logo }}" alt="Company Logo" class="max-w-full max-h-full object-contain">
+                            {% else %}
+                            <div class="text-center text-text-light">
+                                <i class="fas fa-image text-2xl mb-2"></i>
+                                <p class="text-sm">Logo Preview</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="flex items-center justify-between pt-6 border-t border-border">
+                <a href="/admin/companies" class="btn btn-secondary">
+                    <i class="fas fa-times mr-2"></i>
+                    Cancel
+                </a>
+                
+                <div class="flex items-center space-x-3">
+                    {% if company %}
+                    <button type="button" class="btn btn-warning" onclick="resetForm()">
+                        <i class="fas fa-undo mr-2"></i>
+                        Reset
+                    </button>
+                    {% endif %}
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save mr-2"></i>
+                        {% if company %}Update Company{% else %}Create Company{% endif %}
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        {% if company %}
+        <!-- Additional Information -->
+        <div class="mt-8 pt-8 border-t border-border">
+            <h3 class="text-lg font-semibold text-text-primary mb-4">Company Statistics</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-background rounded-lg p-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-users text-blue-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-text-secondary">Total Employees</p>
+                            <p class="font-medium text-text-primary">
+                                {{ company.users|length if company.users else 0 }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-background rounded-lg p-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-credit-card text-purple-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-text-secondary">Credit Limits</p>
+                            <p class="font-medium text-text-primary">
+                                {{ company.credit_limits|length if company.credit_limits else 0 }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-background rounded-lg p-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-file-invoice-dollar text-green-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-text-secondary">Active Loans</p>
+                            <p class="font-medium text-text-primary">
+                                <!-- This would need to be calculated from related data -->
+                                0
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if not company %}
+    <!-- Tips for New Company -->
+    <div class="mt-6 bg-purple-50 border border-purple-200 rounded-lg p-6">
+        <div class="flex items-start space-x-3">
+            <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                <i class="fas fa-lightbulb text-purple-600"></i>
+            </div>
+            <div>
+                <h4 class="font-semibold text-purple-800 mb-2">Tips for Adding New Companies</h4>
+                <ul class="text-sm text-purple-700 space-y-1">
+                    <li>• Use the official company name as registered</li>
+                    <li>• Logo should be in PNG or JPG format with transparent background</li>
+                    <li>• Recommended logo size: 200x100 pixels or similar aspect ratio</li>
+                    <li>• Description helps identify the company's business sector</li>
+                    <li>• Ensure logo URL is publicly accessible</li>
+                    <li>• Companies can have multiple employees with credit limits</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function resetForm() {
+    if (confirm('Are you sure you want to reset all changes? This will restore the original values.')) {
+        document.querySelector('form').reset();
+        updateLogoPreview();
+    }
+}
+
+function updateLogoPreview() {
+    const logoInput = document.getElementById('logo');
+    const preview = document.getElementById('logo-preview');
+    const logoUrl = logoInput.value.trim();
+    
+    if (logoUrl && isValidUrl(logoUrl)) {
+        preview.innerHTML = `<img src="${logoUrl}" alt="Company Logo" class="max-w-full max-h-full object-contain" onerror="showLogoError()">`;
+    } else {
+        preview.innerHTML = `
+            <div class="text-center text-text-light">
+                <i class="fas fa-image text-2xl mb-2"></i>
+                <p class="text-sm">Logo Preview</p>
+            </div>
+        `;
+    }
+}
+
+function showLogoError() {
+    const preview = document.getElementById('logo-preview');
+    preview.innerHTML = `
+        <div class="text-center text-red-500">
+            <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+            <p class="text-sm">Invalid Logo URL</p>
+        </div>
+    `;
+}
+
+function isValidUrl(string) {
+    try {
+        new URL(string);
+        return true;
+    } catch (_) {
+        return false;
+    }
+}
+
+// Form validation and real-time updates
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const logoInput = document.getElementById('logo');
+    const nameInput = document.getElementById('name');
+    
+    // Logo preview update
+    logoInput.addEventListener('input', function() {
+        clearTimeout(this.previewTimeout);
+        this.previewTimeout = setTimeout(updateLogoPreview, 500);
+    });
+    
+    // Form validation
+    const inputs = form.querySelectorAll('input[required]');
+    
+    inputs.forEach(input => {
+        input.addEventListener('blur', function() {
+            validateField(this);
+        });
+        
+        input.addEventListener('input', function() {
+            this.classList.remove('border-red-500');
+            const errorMsg = this.parentNode.querySelector('.error-message');
+            if (errorMsg) {
+                errorMsg.remove();
+            }
+        });
+    });
+    
+    form.addEventListener('submit', function(e) {
+        let isValid = true;
+        
+        inputs.forEach(input => {
+            if (!validateField(input)) {
+                isValid = false;
+            }
+        });
+        
+        if (!isValid) {
+            e.preventDefault();
+            window.adminJS.showNotification('Please fix the errors before submitting', 'error');
+        }
+    });
+    
+    // Initialize logo preview
+    updateLogoPreview();
+});
+
+function validateField(field) {
+    const value = field.value.trim();
+    let isValid = true;
+    let errorMessage = '';
+    
+    // Remove existing error
+    field.classList.remove('border-red-500');
+    const existingError = field.parentNode.querySelector('.error-message');
+    if (existingError) {
+        existingError.remove();
+    }
+    
+    // Required field validation
+    if (field.hasAttribute('required') && !value) {
+        isValid = false;
+        errorMessage = 'This field is required';
+    }
+    
+    // URL validation for logo
+    if (field.type === 'url' && value) {
+        if (!isValidUrl(value)) {
+            isValid = false;
+            errorMessage = 'Please enter a valid URL';
+        }
+    }
+    
+    // Show error if validation failed
+    if (!isValid) {
+        field.classList.add('border-red-500');
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error-message text-red-500 text-sm mt-1';
+        errorDiv.textContent = errorMessage;
+        field.parentNode.appendChild(errorDiv);
+    }
+    
+    return isValid;
+}
+</script>
+{% endblock %}
