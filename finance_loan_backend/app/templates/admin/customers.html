@@ -1,0 +1,330 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Customer Management - Finance Loan Admin{% endblock %}
+
+{% block page_title %}Customer Management{% endblock %}
+{% block page_description %}Manage all registered customers{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header with Add Button -->
+    <div class="flex items-center justify-between">
+        <div class="search-bar flex-1 mr-4">
+            <input 
+                type="text" 
+                class="search-input" 
+                placeholder="Search customers by name, email, or phone..."
+                id="customer-search"
+            >
+        </div>
+        
+        <a href="/admin/customers/new" class="btn btn-primary">
+            <i class="fas fa-plus mr-2"></i>
+            Add Customer
+        </a>
+    </div>
+
+    <!-- Customers Table -->
+    <div class="bg-white rounded-xl shadow-sm border border-border overflow-hidden">
+        <div class="px-6 py-4 border-b border-border">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-text-primary">
+                    Customers
+                    {% if customers %}
+                        <span class="text-sm font-normal text-text-secondary ml-2">({{ customers|length }} total)</span>
+                    {% endif %}
+                </h3>
+                
+                <div class="flex items-center space-x-2">
+                    <button class="btn btn-secondary btn-sm" onclick="exportCustomers()">
+                        <i class="fas fa-download mr-1"></i>
+                        Export
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        {% if customers %}
+        <div class="overflow-x-auto">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>
+                            <input type="checkbox" id="select-all" class="rounded">
+                        </th>
+                        <th data-sort="full_name">Customer</th>
+                        <th data-sort="email">Email</th>
+                        <th data-sort="phone_number">Phone</th>
+                        <th data-sort="is_active">Status</th>
+                        <th data-sort="created_at">Joined</th>
+                        <th>Loans</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for customer in customers %}
+                    <tr>
+                        <td>
+                            <input type="checkbox" class="row-checkbox rounded" value="{{ customer.id }}">
+                        </td>
+                        <td>
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 bg-gradient-to-r from-primary to-secondary rounded-full flex items-center justify-center">
+                                    {% if customer.profile_image %}
+                                    <img src="{{ customer.profile_image }}" alt="{{ customer.full_name }}" class="w-10 h-10 rounded-full object-cover">
+                                    {% else %}
+                                    <i class="fas fa-user text-white"></i>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <div class="font-medium text-text-primary">{{ customer.full_name }}</div>
+                                    <div class="text-sm text-text-secondary">ID: {{ customer.id[:8] }}...</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="text-text-primary">{{ customer.email }}</div>
+                        </td>
+                        <td>
+                            <div class="text-text-primary">{{ customer.phone_number }}</div>
+                        </td>
+                        <td>
+                            <span class="status-badge {% if customer.is_active %}status-active{% else %}status-inactive{% endif %}">
+                                {% if customer.is_active %}Active{% else %}Inactive{% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="text-sm text-text-secondary">
+                                {{ customer.created_at.strftime('%m/%d/%Y') if customer.created_at else 'N/A' }}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                    {{ customer.loans|length if customer.loans else 0 }} loans
+                                </span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="flex items-center space-x-2">
+                                <a 
+                                    href="/admin/customers/{{ customer.id }}/edit" 
+                                    class="btn btn-secondary btn-sm"
+                                    title="Edit Customer"
+                                >
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                
+                                <button 
+                                    class="btn btn-danger btn-sm" 
+                                    onclick="confirmDeleteCustomer('{{ customer.id }}', '{{ customer.full_name }}')"
+                                    title="Delete Customer"
+                                >
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                
+                                <button 
+                                    class="btn btn-secondary btn-sm" 
+                                    onclick="viewCustomerDetails('{{ customer.id }}')"
+                                    title="View Details"
+                                >
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Bulk Actions -->
+        <div id="bulk-actions" class="hidden px-6 py-4 bg-blue-50 border-t border-border">
+            <div class="flex items-center justify-between">
+                <span class="text-sm text-text-secondary">
+                    <span class="selected-count">0</span> customers selected
+                </span>
+                <div class="flex items-center space-x-2">
+                    <button class="btn btn-success btn-sm" onclick="bulkUpdateStatus(true)">
+                        <i class="fas fa-check mr-1"></i>
+                        Activate Selected
+                    </button>
+                    <button class="btn btn-warning btn-sm" onclick="bulkUpdateStatus(false)">
+                        <i class="fas fa-pause mr-1"></i>
+                        Deactivate Selected
+                    </button>
+                    <button class="btn btn-danger btn-sm" onclick="bulkDeleteCustomers()">
+                        <i class="fas fa-trash mr-1"></i>
+                        Delete Selected
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <!-- Empty State -->
+        <div class="empty-state py-16">
+            <div class="empty-state-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <h4 class="empty-state-title">No Customers Found</h4>
+            <p class="empty-state-description">
+                No customers have been registered yet. Add your first customer to get started.
+            </p>
+            <div class="mt-6">
+                <a href="/admin/customers/new" class="btn btn-primary">
+                    <i class="fas fa-plus mr-2"></i>
+                    Add First Customer
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Customer Details Modal -->
+<div id="customer-details-modal" class="modal-overlay hidden">
+    <div class="modal-content max-w-2xl">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-xl font-semibold text-text-primary">Customer Details</h3>
+            <button class="text-text-secondary hover:text-text-primary" onclick="closeCustomerModal()">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        <div id="customer-details-content">
+            <!-- Content will be loaded dynamically -->
+        </div>
+        
+        <div class="flex justify-end space-x-3 mt-6">
+            <button class="btn btn-secondary" onclick="closeCustomerModal()">Close</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function exportCustomers() {
+    // In a real application, this would trigger a CSV/Excel export
+    window.adminJS.showNotification('Export functionality would be implemented here', 'info');
+}
+
+function viewCustomerDetails(customerId) {
+    // In a real application, this would fetch customer details via AJAX
+    const modal = document.getElementById('customer-details-modal');
+    const content = document.getElementById('customer-details-content');
+    
+    content.innerHTML = `
+        <div class="space-y-6">
+            <div class="flex items-center space-x-4">
+                <div class="w-16 h-16 bg-gradient-to-r from-primary to-secondary rounded-full flex items-center justify-center">
+                    <i class="fas fa-user text-white text-xl"></i>
+                </div>
+                <div>
+                    <h4 class="text-lg font-semibold text-text-primary">Customer Information</h4>
+                    <p class="text-text-secondary">ID: ${customerId}</p>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-6">
+                <div>
+                    <label class="text-sm font-medium text-text-secondary">Personal Information</label>
+                    <div class="mt-2 space-y-2">
+                        <p><strong>Name:</strong> Loading...</p>
+                        <p><strong>Email:</strong> Loading...</p>
+                        <p><strong>Phone:</strong> Loading...</p>
+                    </div>
+                </div>
+                <div>
+                    <label class="text-sm font-medium text-text-secondary">Account Status</label>
+                    <div class="mt-2 space-y-2">
+                        <p><strong>Status:</strong> <span class="status-badge status-active">Active</span></p>
+                        <p><strong>Joined:</strong> Loading...</p>
+                        <p><strong>Last Login:</strong> Loading...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div>
+                <label class="text-sm font-medium text-text-secondary">Loan History</label>
+                <div class="mt-2 text-center py-8 text-text-secondary">
+                    <i class="fas fa-file-invoice-dollar text-2xl mb-2"></i>
+                    <p>Loan history would be displayed here</p>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    modal.classList.remove('hidden');
+}
+
+function closeCustomerModal() {
+    document.getElementById('customer-details-modal').classList.add('hidden');
+}
+
+function confirmDeleteCustomer(customerId, customerName) {
+    if (confirm(`Are you sure you want to delete customer "${customerName}"? This action cannot be undone.`)) {
+        // Create and submit delete form
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/admin/customers/${customerId}/delete`;
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+function bulkUpdateStatus(isActive) {
+    const selectedCustomers = document.querySelectorAll('.row-checkbox:checked');
+    if (selectedCustomers.length === 0) {
+        window.adminJS.showNotification('Please select customers to update', 'warning');
+        return;
+    }
+    
+    const action = isActive ? 'activate' : 'deactivate';
+    const message = `Are you sure you want to ${action} ${selectedCustomers.length} customer(s)?`;
+    
+    if (confirm(message)) {
+        // In a real application, this would make an AJAX request to bulk update
+        window.adminJS.showNotification(`Bulk ${action} functionality would be implemented here`, 'info');
+    }
+}
+
+function bulkDeleteCustomers() {
+    const selectedCustomers = document.querySelectorAll('.row-checkbox:checked');
+    if (selectedCustomers.length === 0) {
+        window.adminJS.showNotification('Please select customers to delete', 'warning');
+        return;
+    }
+    
+    const message = `Are you sure you want to delete ${selectedCustomers.length} customer(s)? This action cannot be undone.`;
+    
+    if (confirm(message)) {
+        // In a real application, this would make an AJAX request to bulk delete
+        window.adminJS.showNotification('Bulk delete functionality would be implemented here', 'info');
+    }
+}
+
+// Initialize search functionality
+document.getElementById('customer-search').addEventListener('input', function(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    const rows = document.querySelectorAll('tbody tr');
+    
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(searchTerm) ? '' : 'none';
+    });
+});
+
+// Add hover effects to customer rows
+document.addEventListener('DOMContentLoaded', function() {
+    const rows = document.querySelectorAll('tbody tr');
+    rows.forEach(row => {
+        row.addEventListener('mouseenter', function() {
+            this.style.backgroundColor = '#f8fafc';
+        });
+        
+        row.addEventListener('mouseleave', function() {
+            this.style.backgroundColor = '';
+        });
+    });
+});
+</script>
+{% endblock %}
