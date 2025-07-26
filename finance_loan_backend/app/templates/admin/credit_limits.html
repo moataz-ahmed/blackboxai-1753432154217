@@ -1,0 +1,387 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Credit Limit Management - Finance Loan Admin{% endblock %}
+
+{% block page_title %}Credit Limit Management{% endblock %}
+{% block page_description %}Manage all customer credit limits{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header with Add Button -->
+    <div class="flex items-center justify-between">
+        <div class="search-bar flex-1 mr-4">
+            <input 
+                type="text" 
+                class="search-input" 
+                placeholder="Search by customer name, bank, or company..."
+                id="credit-limit-search"
+            >
+        </div>
+        
+        <a href="/admin/credit-limits/new" class="btn btn-primary">
+            <i class="fas fa-plus mr-2"></i>
+            Add Credit Limit
+        </a>
+    </div>
+
+    <!-- Credit Limits Table -->
+    <div class="bg-white rounded-xl shadow-sm border border-border overflow-hidden">
+        <div class="px-6 py-4 border-b border-border">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-text-primary">
+                    Credit Limits
+                    {% if credit_limits %}
+                        <span class="text-sm font-normal text-text-secondary ml-2">({{ credit_limits|length }} total)</span>
+                    {% endif %}
+                </h3>
+                
+                <div class="flex items-center space-x-2">
+                    <button class="btn btn-secondary btn-sm" onclick="exportCreditLimits()">
+                        <i class="fas fa-download mr-1"></i>
+                        Export
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        {% if credit_limits %}
+        <div class="overflow-x-auto">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>
+                            <input type="checkbox" id="select-all" class="rounded">
+                        </th>
+                        <th data-sort="user">Customer</th>
+                        <th data-sort="bank">Bank</th>
+                        <th data-sort="company">Company</th>
+                        <th data-sort="total_limit">Total Limit</th>
+                        <th data-sort="used_limit">Used</th>
+                        <th data-sort="available_limit">Available</th>
+                        <th>Utilization</th>
+                        <th data-sort="created_at">Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for limit in credit_limits %}
+                    <tr>
+                        <td>
+                            <input type="checkbox" class="row-checkbox rounded" value="{{ limit.id }}">
+                        </td>
+                        <td>
+                            <div class="flex items-center space-x-3">
+                                <div class="w-8 h-8 bg-gradient-to-r from-primary to-secondary rounded-full flex items-center justify-center">
+                                    <i class="fas fa-user text-white text-xs"></i>
+                                </div>
+                                <div>
+                                    <div class="font-medium text-text-primary">{{ limit.user.full_name if limit.user else 'N/A' }}</div>
+                                    <div class="text-sm text-text-secondary">{{ limit.user.email if limit.user else 'N/A' }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="flex items-center space-x-2">
+                                {% if limit.bank and limit.bank.logo %}
+                                <img src="{{ limit.bank.logo }}" alt="{{ limit.bank.name }}" class="w-6 h-6 rounded">
+                                {% endif %}
+                                <span class="text-sm">{{ limit.bank.name if limit.bank else 'N/A' }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="flex items-center space-x-2">
+                                {% if limit.company and limit.company.logo %}
+                                <img src="{{ limit.company.logo }}" alt="{{ limit.company.name }}" class="w-6 h-6 rounded">
+                                {% endif %}
+                                <span class="text-sm">{{ limit.company.name if limit.company else 'N/A' }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="font-semibold text-text-primary">
+                                ${{ "%.2f"|format(limit.total_limit) }}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="font-medium text-warning">
+                                ${{ "%.2f"|format(limit.used_limit) }}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="font-medium text-accent">
+                                ${{ "%.2f"|format(limit.available_limit) }}
+                            </div>
+                        </td>
+                        <td>
+                            {% set utilization = (limit.used_limit / limit.total_limit * 100) if limit.total_limit > 0 else 0 %}
+                            <div class="flex items-center space-x-2">
+                                <div class="w-16 bg-gray-200 rounded-full h-2">
+                                    <div class="h-2 rounded-full {% if utilization > 80 %}bg-red-500{% elif utilization > 60 %}bg-yellow-500{% else %}bg-green-500{% endif %}" style="width: {{ utilization|round }}%"></div>
+                                </div>
+                                <span class="text-xs text-text-secondary">{{ utilization|round }}%</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="text-sm text-text-secondary">
+                                {{ limit.created_at.strftime('%m/%d/%Y') if limit.created_at else 'N/A' }}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="flex items-center space-x-2">
+                                <a 
+                                    href="/admin/credit-limits/{{ limit.id }}/edit" 
+                                    class="btn btn-secondary btn-sm"
+                                    title="Edit Credit Limit"
+                                >
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                
+                                <button 
+                                    class="btn btn-danger btn-sm" 
+                                    onclick="confirmDeleteCreditLimit('{{ limit.id }}', '{{ limit.user.full_name if limit.user else 'Unknown' }}')"
+                                    title="Delete Credit Limit"
+                                >
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                
+                                <button 
+                                    class="btn btn-secondary btn-sm" 
+                                    onclick="viewCreditLimitDetails('{{ limit.id }}')"
+                                    title="View Details"
+                                >
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Bulk Actions -->
+        <div id="bulk-actions" class="hidden px-6 py-4 bg-blue-50 border-t border-border">
+            <div class="flex items-center justify-between">
+                <span class="text-sm text-text-secondary">
+                    <span class="selected-count">0</span> credit limits selected
+                </span>
+                <div class="flex items-center space-x-2">
+                    <button class="btn btn-danger btn-sm" onclick="bulkDeleteCreditLimits()">
+                        <i class="fas fa-trash mr-1"></i>
+                        Delete Selected
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <!-- Empty State -->
+        <div class="empty-state py-16">
+            <div class="empty-state-icon">
+                <i class="fas fa-credit-card"></i>
+            </div>
+            <h4 class="empty-state-title">No Credit Limits Found</h4>
+            <p class="empty-state-description">
+                No credit limits have been set up yet. Add your first credit limit to get started.
+            </p>
+            <div class="mt-6">
+                <a href="/admin/credit-limits/new" class="btn btn-primary">
+                    <i class="fas fa-plus mr-2"></i>
+                    Add First Credit Limit
+                </a>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Summary Cards -->
+    {% if credit_limits %}
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div class="stat-card">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-text-secondary text-sm font-medium">Total Limits</p>
+                    <p class="text-2xl font-bold text-text-primary">{{ credit_limits|length }}</p>
+                </div>
+                <div class="stat-card-icon bg-gradient-to-r from-blue-500 to-blue-600">
+                    <i class="fas fa-credit-card"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-text-secondary text-sm font-medium">Active Limits</p>
+                    <p class="text-2xl font-bold text-warning">{{ credit_limits|length }}</p>
+                </div>
+                <div class="stat-card-icon bg-gradient-to-r from-yellow-500 to-yellow-600">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-text-secondary text-sm font-medium">Banks</p>
+                    <p class="text-2xl font-bold text-accent">{{ credit_limits|map(attribute='bank_id')|unique|list|length }}</p>
+                </div>
+                <div class="stat-card-icon bg-gradient-to-r from-green-500 to-green-600">
+                    <i class="fas fa-university"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-text-secondary text-sm font-medium">Companies</p>
+                    <p class="text-2xl font-bold text-text-primary">{{ credit_limits|map(attribute='company_id')|unique|list|length }}</p>
+                </div>
+                <div class="stat-card-icon bg-gradient-to-r from-purple-500 to-purple-600">
+                    <i class="fas fa-building"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Credit Limit Details Modal -->
+<div id="credit-limit-details-modal" class="modal-overlay hidden">
+    <div class="modal-content max-w-2xl">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-xl font-semibold text-text-primary">Credit Limit Details</h3>
+            <button class="text-text-secondary hover:text-text-primary" onclick="closeCreditLimitModal()">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        <div id="credit-limit-details-content">
+            <!-- Content will be loaded dynamically -->
+        </div>
+        
+        <div class="flex justify-end space-x-3 mt-6">
+            <button class="btn btn-secondary" onclick="closeCreditLimitModal()">Close</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function exportCreditLimits() {
+    window.adminJS.showNotification('Export functionality would be implemented here', 'info');
+}
+
+function viewCreditLimitDetails(limitId) {
+    const modal = document.getElementById('credit-limit-details-modal');
+    const content = document.getElementById('credit-limit-details-content');
+    
+    content.innerHTML = `
+        <div class="space-y-6">
+            <div class="flex items-center space-x-4">
+                <div class="w-16 h-16 bg-gradient-to-r from-primary to-secondary rounded-xl flex items-center justify-center">
+                    <i class="fas fa-credit-card text-white text-xl"></i>
+                </div>
+                <div>
+                    <h4 class="text-lg font-semibold text-text-primary">Credit Limit Information</h4>
+                    <p class="text-text-secondary">ID: ${limitId}</p>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-6">
+                <div>
+                    <label class="text-sm font-medium text-text-secondary">Customer & Partners</label>
+                    <div class="mt-2 space-y-2">
+                        <p><strong>Customer:</strong> Loading...</p>
+                        <p><strong>Bank:</strong> Loading...</p>
+                        <p><strong>Company:</strong> Loading...</p>
+                    </div>
+                </div>
+                <div>
+                    <label class="text-sm font-medium text-text-secondary">Limit Details</label>
+                    <div class="mt-2 space-y-2">
+                        <p><strong>Total Limit:</strong> Loading...</p>
+                        <p><strong>Used Amount:</strong> Loading...</p>
+                        <p><strong>Available:</strong> Loading...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div>
+                <label class="text-sm font-medium text-text-secondary">Usage History</label>
+                <div class="mt-2 text-center py-8 text-text-secondary">
+                    <i class="fas fa-chart-bar text-2xl mb-2"></i>
+                    <p>Usage history would be displayed here</p>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    modal.classList.remove('hidden');
+}
+
+function closeCreditLimitModal() {
+    document.getElementById('credit-limit-details-modal').classList.add('hidden');
+}
+
+function confirmDeleteCreditLimit(limitId, customerName) {
+    if (confirm(`Are you sure you want to delete the credit limit for "${customerName}"? This action cannot be undone.`)) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/admin/credit-limits/${limitId}/delete`;
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+function bulkDeleteCreditLimits() {
+    const selectedLimits = document.querySelectorAll('.row-checkbox:checked');
+    if (selectedLimits.length === 0) {
+        window.adminJS.showNotification('Please select credit limits to delete', 'warning');
+        return;
+    }
+    
+    const message = `Are you sure you want to delete ${selectedLimits.length} credit limit(s)? This action cannot be undone.`;
+    
+    if (confirm(message)) {
+        window.adminJS.showNotification('Bulk delete functionality would be implemented here', 'info');
+    }
+}
+
+// Initialize search functionality
+document.getElementById('credit-limit-search').addEventListener('input', function(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    const rows = document.querySelectorAll('tbody tr');
+    
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(searchTerm) ? '' : 'none';
+    });
+});
+
+// Add hover effects and utilization color coding
+document.addEventListener('DOMContentLoaded', function() {
+    const rows = document.querySelectorAll('tbody tr');
+    rows.forEach(row => {
+        row.addEventListener('mouseenter', function() {
+            this.style.backgroundColor = '#f8fafc';
+        });
+        
+        row.addEventListener('mouseleave', function() {
+            this.style.backgroundColor = '';
+        });
+    });
+    
+    // Update utilization bar colors dynamically
+    const utilizationBars = document.querySelectorAll('[style*="width:"]');
+    utilizationBars.forEach(bar => {
+        const width = parseFloat(bar.style.width);
+        if (width > 80) {
+            bar.classList.add('bg-red-500');
+        } else if (width > 60) {
+            bar.classList.add('bg-yellow-500');
+        } else {
+            bar.classList.add('bg-green-500');
+        }
+    });
+});
+</script>
+{% endblock %}
