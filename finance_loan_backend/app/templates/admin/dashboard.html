@@ -1,0 +1,282 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Dashboard - Finance Loan Admin{% endblock %}
+
+{% block page_title %}Dashboard{% endblock %}
+{% block page_description %}Overview of your finance loan system{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Total Users Card -->
+        <div class="stat-card">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-text-secondary text-sm font-medium">Total Customers</p>
+                    <p class="text-3xl font-bold text-text-primary">{{ total_users or 0 }}</p>
+                    <p class="text-accent text-sm mt-1">
+                        <i class="fas fa-arrow-up mr-1"></i>
+                        Active users
+                    </p>
+                </div>
+                <div class="stat-card-icon bg-gradient-to-r from-blue-500 to-blue-600">
+                    <i class="fas fa-users"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Banks Card -->
+        <div class="stat-card">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-text-secondary text-sm font-medium">Total Banks</p>
+                    <p class="text-3xl font-bold text-text-primary">{{ total_banks or 0 }}</p>
+                    <p class="text-accent text-sm mt-1">
+                        <i class="fas fa-check-circle mr-1"></i>
+                        Partner banks
+                    </p>
+                </div>
+                <div class="stat-card-icon bg-gradient-to-r from-green-500 to-green-600">
+                    <i class="fas fa-university"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Companies Card -->
+        <div class="stat-card">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-text-secondary text-sm font-medium">Total Companies</p>
+                    <p class="text-3xl font-bold text-text-primary">{{ total_companies or 0 }}</p>
+                    <p class="text-accent text-sm mt-1">
+                        <i class="fas fa-handshake mr-1"></i>
+                        Registered companies
+                    </p>
+                </div>
+                <div class="stat-card-icon bg-gradient-to-r from-purple-500 to-purple-600">
+                    <i class="fas fa-building"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Loans Card -->
+        <div class="stat-card">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-text-secondary text-sm font-medium">Total Loans</p>
+                    <p class="text-3xl font-bold text-text-primary">{{ total_loans or 0 }}</p>
+                    <p class="text-warning text-sm mt-1">
+                        <i class="fas fa-file-invoice-dollar mr-1"></i>
+                        All applications
+                    </p>
+                </div>
+                <div class="stat-card-icon bg-gradient-to-r from-yellow-500 to-yellow-600">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loan Status Overview -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Pending Loans -->
+        <div class="stat-card">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-text-primary">Pending Loans</h3>
+                <div class="stat-card-icon bg-gradient-to-r from-yellow-500 to-orange-500">
+                    <i class="fas fa-clock"></i>
+                </div>
+            </div>
+            <div class="text-center">
+                <p class="text-4xl font-bold text-warning mb-2">{{ pending_loans or 0 }}</p>
+                <p class="text-text-secondary">Awaiting approval</p>
+                <div class="mt-4">
+                    <a href="/admin/loans?status_filter=pending" class="btn btn-warning btn-sm">
+                        <i class="fas fa-eye mr-1"></i>
+                        View All
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Approved Loans -->
+        <div class="stat-card">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-text-primary">Approved Loans</h3>
+                <div class="stat-card-icon bg-gradient-to-r from-green-500 to-green-600">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+            </div>
+            <div class="text-center">
+                <p class="text-4xl font-bold text-accent mb-2">{{ approved_loans or 0 }}</p>
+                <p class="text-text-secondary">Successfully approved</p>
+                <div class="mt-4">
+                    <a href="/admin/loans?status_filter=approved" class="btn btn-success btn-sm">
+                        <i class="fas fa-eye mr-1"></i>
+                        View All
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rejected Loans -->
+        <div class="stat-card">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-text-primary">Rejected Loans</h3>
+                <div class="stat-card-icon bg-gradient-to-r from-red-500 to-red-600">
+                    <i class="fas fa-times-circle"></i>
+                </div>
+            </div>
+            <div class="text-center">
+                <p class="text-4xl font-bold text-error mb-2">{{ rejected_loans or 0 }}</p>
+                <p class="text-text-secondary">Not approved</p>
+                <div class="mt-4">
+                    <a href="/admin/loans?status_filter=rejected" class="btn btn-danger btn-sm">
+                        <i class="fas fa-eye mr-1"></i>
+                        View All
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity and Quick Actions -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Recent Loans -->
+        <div class="bg-white rounded-xl shadow-sm border border-border p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-semibold text-text-primary">Recent Loan Applications</h3>
+                <a href="/admin/loans" class="text-primary hover:text-secondary text-sm font-medium">
+                    View All <i class="fas fa-arrow-right ml-1"></i>
+                </a>
+            </div>
+
+            {% if recent_loans %}
+            <div class="space-y-4">
+                {% for loan in recent_loans %}
+                <div class="flex items-center justify-between p-4 bg-background rounded-lg">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-gradient-to-r from-primary to-secondary rounded-full flex items-center justify-center">
+                            <i class="fas fa-file-invoice-dollar text-white text-sm"></i>
+                        </div>
+                        <div>
+                            <p class="font-medium text-text-primary">Loan #{{ loan.id[:8] }}...</p>
+                            <p class="text-sm text-text-secondary">${{ "%.2f"|format(loan.amount) }}</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span class="status-badge status-{{ loan.status }}">
+                            {{ loan.status.title() }}
+                        </span>
+                        <p class="text-xs text-text-secondary mt-1">
+                            {{ loan.created_at.strftime('%m/%d/%Y') if loan.created_at else 'N/A' }}
+                        </p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                </div>
+                <h4 class="empty-state-title">No Recent Loans</h4>
+                <p class="empty-state-description">No loan applications have been submitted recently.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="bg-white rounded-xl shadow-sm border border-border p-6">
+            <h3 class="text-lg font-semibold text-text-primary mb-6">Quick Actions</h3>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <a href="/admin/customers/new" class="flex flex-col items-center p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors group">
+                    <div class="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+                        <i class="fas fa-user-plus text-white"></i>
+                    </div>
+                    <span class="text-sm font-medium text-text-primary">Add Customer</span>
+                </a>
+
+                <a href="/admin/banks/new" class="flex flex-col items-center p-4 bg-green-50 hover:bg-green-100 rounded-lg transition-colors group">
+                    <div class="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-lg flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+                        <i class="fas fa-university text-white"></i>
+                    </div>
+                    <span class="text-sm font-medium text-text-primary">Add Bank</span>
+                </a>
+
+                <a href="/admin/companies/new" class="flex flex-col items-center p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors group">
+                    <div class="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+                        <i class="fas fa-building text-white"></i>
+                    </div>
+                    <span class="text-sm font-medium text-text-primary">Add Company</span>
+                </a>
+
+                <a href="/admin/credit-limits/new" class="flex flex-col items-center p-4 bg-yellow-50 hover:bg-yellow-100 rounded-lg transition-colors group">
+                    <div class="w-12 h-12 bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-lg flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+                        <i class="fas fa-credit-card text-white"></i>
+                    </div>
+                    <span class="text-sm font-medium text-text-primary">Set Credit Limit</span>
+                </a>
+            </div>
+
+            <!-- System Status -->
+            <div class="mt-6 pt-6 border-t border-border">
+                <h4 class="text-sm font-semibold text-text-primary mb-3">System Status</h4>
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-text-secondary">API Status</span>
+                        <span class="flex items-center text-accent text-sm">
+                            <div class="w-2 h-2 bg-accent rounded-full mr-2"></div>
+                            Online
+                        </span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-text-secondary">Database</span>
+                        <span class="flex items-center text-accent text-sm">
+                            <div class="w-2 h-2 bg-accent rounded-full mr-2"></div>
+                            Connected
+                        </span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-text-secondary">Last Backup</span>
+                        <span class="text-sm text-text-secondary">2 hours ago</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-refresh dashboard data every 30 seconds
+setInterval(function() {
+    // In a real application, you would make an AJAX call to refresh the data
+    // For now, we'll just show a subtle indication that data is being refreshed
+    const cards = document.querySelectorAll('.stat-card');
+    cards.forEach(card => {
+        card.style.opacity = '0.8';
+        setTimeout(() => {
+            card.style.opacity = '1';
+        }, 200);
+    });
+}, 30000);
+
+// Add hover effects to stat cards
+document.addEventListener('DOMContentLoaded', function() {
+    const statCards = document.querySelectorAll('.stat-card');
+    statCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-2px)';
+            this.style.boxShadow = '0 10px 25px rgba(0,0,0,0.1)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = '';
+        });
+    });
+});
+</script>
+{% endblock %}
