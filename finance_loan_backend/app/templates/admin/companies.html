@@ -1,0 +1,298 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Company Management - Finance Loan Admin{% endblock %}
+
+{% block page_title %}Company Management{% endblock %}
+{% block page_description %}Manage all registered companies{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header with Add Button -->
+    <div class="flex items-center justify-between">
+        <div class="search-bar flex-1 mr-4">
+            <input 
+                type="text" 
+                class="search-input" 
+                placeholder="Search companies by name or description..."
+                id="company-search"
+            >
+        </div>
+        
+        <a href="/admin/companies/new" class="btn btn-primary">
+            <i class="fas fa-plus mr-2"></i>
+            Add Company
+        </a>
+    </div>
+
+    <!-- Companies Table -->
+    <div class="bg-white rounded-xl shadow-sm border border-border overflow-hidden">
+        <div class="px-6 py-4 border-b border-border">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-text-primary">
+                    Registered Companies
+                    {% if companies %}
+                        <span class="text-sm font-normal text-text-secondary ml-2">({{ companies|length }} total)</span>
+                    {% endif %}
+                </h3>
+                
+                <div class="flex items-center space-x-2">
+                    <button class="btn btn-secondary btn-sm" onclick="exportCompanies()">
+                        <i class="fas fa-download mr-1"></i>
+                        Export
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        {% if companies %}
+        <div class="overflow-x-auto">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>
+                            <input type="checkbox" id="select-all" class="rounded">
+                        </th>
+                        <th data-sort="name">Company</th>
+                        <th>Logo</th>
+                        <th data-sort="description">Description</th>
+                        <th>Employees</th>
+                        <th>Credit Limits</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for company in companies %}
+                    <tr>
+                        <td>
+                            <input type="checkbox" class="row-checkbox rounded" value="{{ company.id }}">
+                        </td>
+                        <td>
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-building text-white"></i>
+                                </div>
+                                <div>
+                                    <div class="font-medium text-text-primary">{{ company.name }}</div>
+                                    <div class="text-sm text-text-secondary">ID: {{ company.id[:8] }}...</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            {% if company.logo %}
+                            <img src="{{ company.logo }}" alt="{{ company.name }}" class="w-12 h-8 object-contain rounded border">
+                            {% else %}
+                            <div class="w-12 h-8 bg-gray-100 rounded border flex items-center justify-center">
+                                <i class="fas fa-image text-gray-400 text-xs"></i>
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="text-text-primary max-w-xs truncate">
+                                {{ company.description or 'No description' }}
+                            </div>
+                        </td>
+                        <td>
+                            <span class="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                {{ company.users|length if company.users else 0 }} employees
+                            </span>
+                        </td>
+                        <td>
+                            <span class="text-sm bg-purple-100 text-purple-800 px-2 py-1 rounded">
+                                {{ company.credit_limits|length if company.credit_limits else 0 }} limits
+                            </span>
+                        </td>
+                        <td>
+                            <div class="flex items-center space-x-2">
+                                <a 
+                                    href="/admin/companies/{{ company.id }}/edit" 
+                                    class="btn btn-secondary btn-sm"
+                                    title="Edit Company"
+                                >
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                
+                                <button 
+                                    class="btn btn-danger btn-sm" 
+                                    onclick="confirmDeleteCompany('{{ company.id }}', '{{ company.name }}')"
+                                    title="Delete Company"
+                                >
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                
+                                <button 
+                                    class="btn btn-secondary btn-sm" 
+                                    onclick="viewCompanyDetails('{{ company.id }}')"
+                                    title="View Details"
+                                >
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Bulk Actions -->
+        <div id="bulk-actions" class="hidden px-6 py-4 bg-blue-50 border-t border-border">
+            <div class="flex items-center justify-between">
+                <span class="text-sm text-text-secondary">
+                    <span class="selected-count">0</span> companies selected
+                </span>
+                <div class="flex items-center space-x-2">
+                    <button class="btn btn-danger btn-sm" onclick="bulkDeleteCompanies()">
+                        <i class="fas fa-trash mr-1"></i>
+                        Delete Selected
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <!-- Empty State -->
+        <div class="empty-state py-16">
+            <div class="empty-state-icon">
+                <i class="fas fa-building"></i>
+            </div>
+            <h4 class="empty-state-title">No Companies Found</h4>
+            <p class="empty-state-description">
+                No companies have been registered yet. Add your first company to get started.
+            </p>
+            <div class="mt-6">
+                <a href="/admin/companies/new" class="btn btn-primary">
+                    <i class="fas fa-plus mr-2"></i>
+                    Add First Company
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Company Details Modal -->
+<div id="company-details-modal" class="modal-overlay hidden">
+    <div class="modal-content max-w-2xl">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-xl font-semibold text-text-primary">Company Details</h3>
+            <button class="text-text-secondary hover:text-text-primary" onclick="closeCompanyModal()">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        <div id="company-details-content">
+            <!-- Content will be loaded dynamically -->
+        </div>
+        
+        <div class="flex justify-end space-x-3 mt-6">
+            <button class="btn btn-secondary" onclick="closeCompanyModal()">Close</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function exportCompanies() {
+    window.adminJS.showNotification('Export functionality would be implemented here', 'info');
+}
+
+function viewCompanyDetails(companyId) {
+    const modal = document.getElementById('company-details-modal');
+    const content = document.getElementById('company-details-content');
+    
+    content.innerHTML = `
+        <div class="space-y-6">
+            <div class="flex items-center space-x-4">
+                <div class="w-16 h-16 bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-building text-white text-xl"></i>
+                </div>
+                <div>
+                    <h4 class="text-lg font-semibold text-text-primary">Company Information</h4>
+                    <p class="text-text-secondary">ID: ${companyId}</p>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-6">
+                <div>
+                    <label class="text-sm font-medium text-text-secondary">Company Details</label>
+                    <div class="mt-2 space-y-2">
+                        <p><strong>Name:</strong> Loading...</p>
+                        <p><strong>Description:</strong> Loading...</p>
+                        <p><strong>Logo:</strong> Loading...</p>
+                    </div>
+                </div>
+                <div>
+                    <label class="text-sm font-medium text-text-secondary">Statistics</label>
+                    <div class="mt-2 space-y-2">
+                        <p><strong>Total Employees:</strong> Loading...</p>
+                        <p><strong>Credit Limits:</strong> Loading...</p>
+                        <p><strong>Active Loans:</strong> Loading...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div>
+                <label class="text-sm font-medium text-text-secondary">Employee List</label>
+                <div class="mt-2 text-center py-8 text-text-secondary">
+                    <i class="fas fa-users text-2xl mb-2"></i>
+                    <p>Employee list would be displayed here</p>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    modal.classList.remove('hidden');
+}
+
+function closeCompanyModal() {
+    document.getElementById('company-details-modal').classList.add('hidden');
+}
+
+function confirmDeleteCompany(companyId, companyName) {
+    if (confirm(`Are you sure you want to delete company "${companyName}"? This action cannot be undone and will affect all related employees and credit limits.`)) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/admin/companies/${companyId}/delete`;
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+function bulkDeleteCompanies() {
+    const selectedCompanies = document.querySelectorAll('.row-checkbox:checked');
+    if (selectedCompanies.length === 0) {
+        window.adminJS.showNotification('Please select companies to delete', 'warning');
+        return;
+    }
+    
+    const message = `Are you sure you want to delete ${selectedCompanies.length} company(ies)? This action cannot be undone.`;
+    
+    if (confirm(message)) {
+        window.adminJS.showNotification('Bulk delete functionality would be implemented here', 'info');
+    }
+}
+
+// Initialize search functionality
+document.getElementById('company-search').addEventListener('input', function(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    const rows = document.querySelectorAll('tbody tr');
+    
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(searchTerm) ? '' : 'none';
+    });
+});
+
+// Add hover effects to company rows
+document.addEventListener('DOMContentLoaded', function() {
+    const rows = document.querySelectorAll('tbody tr');
+    rows.forEach(row => {
+        row.addEventListener('mouseenter', function() {
+            this.style.backgroundColor = '#f8fafc';
+        });
+        
+        row.addEventListener('mouseleave', function() {
+            this.style.backgroundColor = '';
+        });
+    });
+});
+</script>
+{% endblock %}
