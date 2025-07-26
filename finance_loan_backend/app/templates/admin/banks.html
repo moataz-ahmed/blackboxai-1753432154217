@@ -1,0 +1,284 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Bank Management - Finance Loan Admin{% endblock %}
+
+{% block page_title %}Bank Management{% endblock %}
+{% block page_description %}Manage all partner banks{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header with Add Button -->
+    <div class="flex items-center justify-between">
+        <div class="search-bar flex-1 mr-4">
+            <input 
+                type="text" 
+                class="search-input" 
+                placeholder="Search banks by name or description..."
+                id="bank-search"
+            >
+        </div>
+        
+        <a href="/admin/banks/new" class="btn btn-primary">
+            <i class="fas fa-plus mr-2"></i>
+            Add Bank
+        </a>
+    </div>
+
+    <!-- Banks Table -->
+    <div class="bg-white rounded-xl shadow-sm border border-border overflow-hidden">
+        <div class="px-6 py-4 border-b border-border">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-text-primary">
+                    Partner Banks
+                    {% if banks %}
+                        <span class="text-sm font-normal text-text-secondary ml-2">({{ banks|length }} total)</span>
+                    {% endif %}
+                </h3>
+                
+                <div class="flex items-center space-x-2">
+                    <button class="btn btn-secondary btn-sm" onclick="exportBanks()">
+                        <i class="fas fa-download mr-1"></i>
+                        Export
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        {% if banks %}
+        <div class="overflow-x-auto">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>
+                            <input type="checkbox" id="select-all" class="rounded">
+                        </th>
+                        <th data-sort="name">Bank</th>
+                        <th>Logo</th>
+                        <th data-sort="description">Description</th>
+                        <th>Loans</th>
+                        <th>Credit Limits</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for bank in banks %}
+                    <tr>
+                        <td>
+                            <input type="checkbox" class="row-checkbox rounded" value="{{ bank.id }}">
+                        </td>
+                        <td>
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 bg-gradient-to-r from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-university text-white"></i>
+                                </div>
+                                <div>
+                                    <div class="font-medium text-text-primary">{{ bank.name }}</div>
+                                    <div class="text-sm text-text-secondary">ID: {{ bank.id[:8] }}...</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            {% if bank.logo %}
+                            <img src="{{ bank.logo }}" alt="{{ bank.name }}" class="w-12 h-8 object-contain rounded border">
+                            {% else %}
+                            <div class="w-12 h-8 bg-gray-100 rounded border flex items-center justify-center">
+                                <i class="fas fa-image text-gray-400 text-xs"></i>
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="text-text-primary max-w-xs truncate">
+                                {{ bank.description or 'No description' }}
+                            </div>
+                        </td>
+                        <td>
+                            <span class="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                {{ bank.loans|length if bank.loans else 0 }} loans
+                            </span>
+                        </td>
+                        <td>
+                            <span class="text-sm bg-purple-100 text-purple-800 px-2 py-1 rounded">
+                                {{ bank.credit_limits|length if bank.credit_limits else 0 }} limits
+                            </span>
+                        </td>
+                        <td>
+                            <div class="flex items-center space-x-2">
+                                <a 
+                                    href="/admin/banks/{{ bank.id }}/edit" 
+                                    class="btn btn-secondary btn-sm"
+                                    title="Edit Bank"
+                                >
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                
+                                <button 
+                                    class="btn btn-danger btn-sm" 
+                                    onclick="confirmDeleteBank('{{ bank.id }}', '{{ bank.name }}')"
+                                    title="Delete Bank"
+                                >
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                
+                                <button 
+                                    class="btn btn-secondary btn-sm" 
+                                    onclick="viewBankDetails('{{ bank.id }}')"
+                                    title="View Details"
+                                >
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Bulk Actions -->
+        <div id="bulk-actions" class="hidden px-6 py-4 bg-blue-50 border-t border-border">
+            <div class="flex items-center justify-between">
+                <span class="text-sm text-text-secondary">
+                    <span class="selected-count">0</span> banks selected
+                </span>
+                <div class="flex items-center space-x-2">
+                    <button class="btn btn-danger btn-sm" onclick="bulkDeleteBanks()">
+                        <i class="fas fa-trash mr-1"></i>
+                        Delete Selected
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <!-- Empty State -->
+        <div class="empty-state py-16">
+            <div class="empty-state-icon">
+                <i class="fas fa-university"></i>
+            </div>
+            <h4 class="empty-state-title">No Banks Found</h4>
+            <p class="empty-state-description">
+                No partner banks have been added yet. Add your first bank to get started.
+            </p>
+            <div class="mt-6">
+                <a href="/admin/banks/new" class="btn btn-primary">
+                    <i class="fas fa-plus mr-2"></i>
+                    Add First Bank
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Bank Details Modal -->
+<div id="bank-details-modal" class="modal-overlay hidden">
+    <div class="modal-content max-w-2xl">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-xl font-semibold text-text-primary">Bank Details</h3>
+            <button class="text-text-secondary hover:text-text-primary" onclick="closeBankModal()">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        <div id="bank-details-content">
+            <!-- Content will be loaded dynamically -->
+        </div>
+        
+        <div class="flex justify-end space-x-3 mt-6">
+            <button class="btn btn-secondary" onclick="closeBankModal()">Close</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function exportBanks() {
+    window.adminJS.showNotification('Export functionality would be implemented here', 'info');
+}
+
+function viewBankDetails(bankId) {
+    const modal = document.getElementById('bank-details-modal');
+    const content = document.getElementById('bank-details-content');
+    
+    content.innerHTML = `
+        <div class="space-y-6">
+            <div class="flex items-center space-x-4">
+                <div class="w-16 h-16 bg-gradient-to-r from-green-500 to-green-600 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-university text-white text-xl"></i>
+                </div>
+                <div>
+                    <h4 class="text-lg font-semibold text-text-primary">Bank Information</h4>
+                    <p class="text-text-secondary">ID: ${bankId}</p>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-6">
+                <div>
+                    <label class="text-sm font-medium text-text-secondary">Bank Details</label>
+                    <div class="mt-2 space-y-2">
+                        <p><strong>Name:</strong> Loading...</p>
+                        <p><strong>Description:</strong> Loading...</p>
+                        <p><strong>Logo:</strong> Loading...</p>
+                    </div>
+                </div>
+                <div>
+                    <label class="text-sm font-medium text-text-secondary">Statistics</label>
+                    <div class="mt-2 space-y-2">
+                        <p><strong>Total Loans:</strong> Loading...</p>
+                        <p><strong>Credit Limits:</strong> Loading...</p>
+                        <p><strong>Active Customers:</strong> Loading...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div>
+                <label class="text-sm font-medium text-text-secondary">Recent Activity</label>
+                <div class="mt-2 text-center py-8 text-text-secondary">
+                    <i class="fas fa-chart-line text-2xl mb-2"></i>
+                    <p>Recent activity would be displayed here</p>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    modal.classList.remove('hidden');
+}
+
+function closeBankModal() {
+    document.getElementById('bank-details-modal').classList.add('hidden');
+}
+
+function confirmDeleteBank(bankId, bankName) {
+    if (confirm(`Are you sure you want to delete bank "${bankName}"? This action cannot be undone and will affect all related loans and credit limits.`)) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/admin/banks/${bankId}/delete`;
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+function bulkDeleteBanks() {
+    const selectedBanks = document.querySelectorAll('.row-checkbox:checked');
+    if (selectedBanks.length === 0) {
+        window.adminJS.showNotification('Please select banks to delete', 'warning');
+        return;
+    }
+    
+    const message = `Are you sure you want to delete ${selectedBanks.length} bank(s)? This action cannot be undone.`;
+    
+    if (confirm(message)) {
+        window.adminJS.showNotification('Bulk delete functionality would be implemented here', 'info');
+    }
+}
+
+// Initialize search functionality
+document.getElementById('bank-search').addEventListener('input', function(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    const rows = document.querySelectorAll('tbody tr');
+    
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(searchTerm) ? '' : 'none';
+    });
+});
+</script>
+{% endblock %}
